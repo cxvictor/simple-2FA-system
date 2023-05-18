@@ -1,9 +1,9 @@
 import configparser
 import random
+import smtplib
+import ssl
 
 from captcha.image import ImageCaptcha
-from email.mime.image import MIMEImage
-from email.mime.multipart import MIMEMultipart
 
 class TwoFactoresSystem:
     
@@ -15,6 +15,7 @@ class TwoFactoresSystem:
         self.password = self.config.get('config', 'password')
         self.host = self.config.get('config', 'host')
         self.port = self.config.getint('config', 'port')
+        self.context = ssl.create_default_context()
         
     
     def generate_captcha(self) -> tuple:
@@ -25,3 +26,19 @@ class TwoFactoresSystem:
         captcha = captcha_img.getvalue()
 
         return captcha, captcha_code
+    
+    
+    def verification(self, captcha = None, receiver = None) -> None:
+        msg = f"Your verification code:\n {captcha}"
+        with smtplib.SMTP_SSL(host=self.host, port=self.port, context=self.context) as server:
+            server.login(self.email, self.password)
+            server.sendmail(from_addr = self.email, to_addrs = receiver, msg = msg)
+            
+            
+    def input_captcha(self, captcha_code = None, captcha_entered = '123456') -> bool:
+        if captcha_code == captcha_entered:
+            return True
+        else:
+            return False
+        
+        
